@@ -41,10 +41,10 @@ const imgs = await page.$$eval(selector, (imgs) => imgs.map((img) => img.getAttr
 await browser.close();
 
 if (imgs.length && imgs[0] !== null) {
-  return imgs;
+  res.json({response: imgs})
+}else{
+  res.json({response:"error"})
 }
-
-throw new Error('Unable to generate');
 
 }
 module.exports = { scrapeLogic };
