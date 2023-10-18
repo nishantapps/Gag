@@ -30,8 +30,8 @@ const button = await parent?.$('button');
 if (button) {
   await button.click();
 }
-
-const selector = `img`;
+await page.waitForTimeout(120000);
+const selector = `img[alt=`${text}`)`;
 await page.waitForSelector(selector, {
   timeout: 12e4,
 });
