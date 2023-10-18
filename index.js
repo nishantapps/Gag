@@ -8,7 +8,16 @@ app.get("/scrape", (req, res) => {
   scrapeLogic(res,"roses")
   
 });
+app.get('/images/:image', (req, res) => {
+  // Get the image name from the request
+  const imageName = req.params.image;
 
+  // Create the path to the image file
+  const imagePath = `./${imageName}`;
+
+  // Send the image file to the client
+  res.sendFile(imagePath);
+});
 app.get("/", (req, res) => {
   res.send("Render Puppeteer server is up and running!");
 });
