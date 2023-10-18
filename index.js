@@ -5,8 +5,8 @@ const app = express();
 const PORT = process.env.PORT || 1000;
 
 app.get("/scrape", (req, res) => {
-  let r = scrapeLogic(res,"roses")
-  res.json({response:r})
+  lscrapeLogic(res,"roses")
+  
 });
 
 app.get("/", (req, res) => {
