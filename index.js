@@ -16,7 +16,7 @@ app.get('/images/:image', (req, res) => {
   const imagePath = `./${imageName}`;
 
   // Send the image file to the client
-  res.sendFile(imagePath);
+  res.sendFile(__dirname+`/${imageName}`);
 });
 app.get("/", (req, res) => {
   res.send("Render Puppeteer server is up and running!");
