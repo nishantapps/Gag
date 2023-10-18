@@ -31,6 +31,7 @@ if (button) {
   await button.click();
 }
 await page.waitForTimeout(120000);
+await page.screenshot({path: 'screenshot.png', fullPage: true});
 const selector = `img`;
 await page.waitForSelector(selector, {
   timeout: 12e4,
