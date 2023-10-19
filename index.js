@@ -5,7 +5,10 @@ const app = express();
 const PORT = process.env.PORT || 1000;
 
 app.get("/scrape", (req, res) => {
-  scrapeLogic(res,"roses")
+  if(!req.headers['text']){
+                return res.json({response:"Text header is missing"});
+            }
+  scrapeLogic(res,req.headers['text'])
   
 });
 app.get('/images/:image', (req, res) => {
