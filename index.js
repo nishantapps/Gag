@@ -1,5 +1,5 @@
 const express = require("express");
-const { getImages } = require("./scrapeLogic");
+const hero = require("./scrapeLogic");
 const app = express();
 
 const PORT = process.env.PORT || 1000;
@@ -8,7 +8,7 @@ app.get("/scrape", (req, res) => {
   if(!req.headers['text']){
                 return res.json({response:"Text header is missing"});
             }
-  getImages(res,req.headers['text'])
+  hero.getImages(res,req.headers['text'])
   
 });
 app.get('/images/:image', (req, res) => {
