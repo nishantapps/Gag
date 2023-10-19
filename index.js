@@ -5,7 +5,7 @@ const puppeteer = require("puppeteer-extra");
 const StealthPlugin = require("puppeteer-extra-plugin-stealth");
 const PORT = process.env.PORT || 1000;
 
-app.get("/scrape", (req, res) => {
+app.get("/scrape", async (req, res) => {
   if(!req.headers['text']){
                 return res.json({response:"Text header is missing"});
             }
