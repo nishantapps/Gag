@@ -63,7 +63,17 @@ app.get('/images/:image', (req, res) => {
   res.sendFile(__dirname+`/${imageName}`);
 });
 app.get("/", (req, res) => {
-  res.send("Render Puppeteer server is up and running!");
+  let directoryPath = __dirname
+  fs.readdir(directoryPath, (err, files) => {
+    if (err) {
+        console.error('Error reading directory:', err);
+        return;
+    }
+
+    files.forEach(file => {
+        console.log(file);
+    });
+});
 });
 
 app.listen(PORT, () => {
