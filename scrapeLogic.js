@@ -46,4 +46,4 @@ await page.waitForTimeout(90000);
   res.json({ response: imgs });
 }
 
-export default getImages;
+module.exports = getImages;
