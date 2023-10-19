@@ -1,9 +1,11 @@
-const puppeteer = require("puppeteer-extra");
-const StealthPlugin = require('puppeteer-extra-plugin-stealth');
-puppeteer.use(StealthPlugin());
-require("dotenv").config();
+import puppeteer from 'puppeteer-extra';
+import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 
-const scrapeLogic = async (res,text) => {
+
+async function getImages(prompt, res) {
+  // Create a new Puppeteer instance with the stealth plugin
+  puppeteer.use(StealthPlugin());
+
   const browser = await puppeteer.launch({
     headless:true,
     args: [
@@ -17,35 +19,32 @@ const scrapeLogic = async (res,text) => {
         ? process.env.PUPPETEER_EXECUTABLE_PATH
         : puppeteer.executablePath(),
   });
-const page = await browser.newPage();
-await page.goto('https://www.craiyon.com');
 
-const input = await page.$('#prompt');
-if (input) {
-  await input.type(text);
+  // Create a new page
+  const page = await browser.newPage();
+
+  // Go to the Cloudflare-protected website
+  await page.goto('https://www.craiyon.com/');
+
+  // Wait for the page to load
+  await page.waitForNavigation();
+
+  const text = '#prompt';
+try{
+await page.waitForSelector(text);
+}catch(err){
+    console.log(err);
+}
+await page.type(text, prompt);
+await page.click('#generateButton');
+await page.waitForTimeout(90000);
+  const selector = `img[alt="${prompt}"]`;
+  await page.waitForSelector(selector, {
+    timeout: 12e4
+  });
+  const imgs = await page.$$eval(selector, (imgs2) => imgs2.map((img) => img.getAttribute("src")));
+  await browser.close();
+  res.json({ response: imgs });
 }
 
-const parent = await input?.getProperty('parentNode');
-const button = await parent?.$('button');
-if (button) {
-  await button.click();
-}
-await page.waitForTimeout(120000);
-await page.screenshot({path: 'screenshot.png', fullPage: true});
-const selector = `img`;
-await page.waitForSelector(selector, {
-  timeout: 12e4,
-});
-
-const imgs = await page.$$eval(selector, (imgs) => imgs.map((img) => img.getAttribute('src')));
-
-await browser.close();
-
-if (imgs.length && imgs[0] !== null) {
-  res.json({response: imgs})
-}else{
-  res.json({response:"error"})
-}
-
-}
-module.exports = { scrapeLogic };
+export default getImages;
