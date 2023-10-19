@@ -1,4 +1,5 @@
 const express = require("express");
+const fs = require('fs')
 const hero = require("./scrapeLogic");
 const app = express();
 const puppeteer = require("puppeteer-extra");
