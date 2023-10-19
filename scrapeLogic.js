@@ -1,6 +1,5 @@
-import puppeteer from 'puppeteer-extra';
-import StealthPlugin from 'puppeteer-extra-plugin-stealth';
-
+const puppeteer = require("puppeteer-extra");
+const StealthPlugin = require("puppeteer-extra-plugin-stealth");
 
 async function getImages(prompt, res) {
   // Create a new Puppeteer instance with the stealth plugin
