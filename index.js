@@ -10,7 +10,7 @@ app.get("/scrape", async (req, res) => {
                 return res.json({response:"Text header is missing"});
             }
   puppeteer.use(StealthPlugin());
-
+let prompt = req.headers['text']
   const browser = await puppeteer.launch({
     headless:true,
     args: [
