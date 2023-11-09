@@ -1,19 +1,11 @@
-const express = require("express");
-const fs = require('fs')
-const hero = require("./scrapeLogic");
+const express = require('express');
+const puppeter = require('puppeteer');
 const app = express();
-const puppeteer = require("puppeteer-extra");
-const StealthPlugin = require("puppeteer-extra-plugin-stealth");
-const PORT = process.env.PORT || 1000;
 
-app.get("/scrape", async (req, res) => {
-  if(!req.headers['text']){
-                return res.json({response:"Text header is missing"});
-            }
-  puppeteer.use(StealthPlugin());
-let prompt = req.headers['text']
-  const browser = await puppeteer.launch({
-    headless:true,
+app.get('/', async (req, res) => {
+    try{
+        if (!req.headers.prompt) return res.status(400).json({ error: 'Prompt not found' });
+    const browser = await puppeter.launch({ headless:true,
     args: [
       "--disable-setuid-sandbox",
       "--no-sandbox",
@@ -23,60 +15,43 @@ let prompt = req.headers['text']
     executablePath:
       process.env.NODE_ENV === "production"
         ? process.env.PUPPETEER_EXECUTABLE_PATH
-        : puppeteer.executablePath(),
-  });
-
-  // Create a new page
-  const page = await browser.newPage();
-
-  // Go to the Cloudflare-protected website
-  await page.goto('https://www.craiyon.com/');
-
-  // Wait for the page to load
-  await page.waitForNavigation();
-
-  const text = '#prompt';
-try{
-await page.waitForSelector(text);
-}catch(err){
-    console.log(err);
-}
-await page.type(text, prompt);
-await page.click('#generateButton');
-await page.waitForTimeout(90000);
-  const selector = `img[alt="${prompt}"]`;
-  await page.waitForSelector(selector, {
-    timeout: 12e4
-  });
-  const imgs = await page.$$eval(selector, (imgs2) => imgs2.map((img) => img.getAttribute("src")));
-  await browser.close();
-  res.json({ response: imgs });
-  
-});
-app.get('/images/:image', (req, res) => {
-  // Get the image name from the request
-  const imageName = req.params.image;
-
-  // Create the path to the image file
-  const imagePath = `./${imageName}`;
-
-  // Send the image file to the client
-  res.sendFile(__dirname+`/${imageName}`);
-});
-app.get("/", (req, res) => {
-  let directoryPath = __dirname
-  fs.readdir(directoryPath, (err, files) => {
-    if (err) {
-        console.error('Error reading directory:', err);
-        return;
+        : puppeteer.executablePath(),});
+    const page = await browser.newPage();
+    await page.goto('https://deepai.org/machine-learning-model/text2img', { waitUntil: 'networkidle2' });
+    const textbox = 'textarea[class="model-input-text-input"]';
+    await page.waitForSelector(textbox);
+    await page.type(textbox, req.headers.prompt);
+    await page.click('button[id="modelSubmitButton"]');
+    await page.waitForTimeout(10000);
+    const img = await page.$eval('div[class="try-it-result-area"]', el => el.querySelector('img').src);
+    res.json({ img: img });
+    browser.close();
+    }catch(err){
+        res.json({error:err})
+        console.log(err)
     }
-
-    files.forEach(file => {
-        console.log(file);
-    });
 });
+app.get('/preview/:prompt', async (req, res) => {
+    try{
+        const browser = await puppeter.launch({ headless: true });
+    const page = await browser.newPage();
+    await page.goto('https://deepai.org/machine-learning-model/text2img', { waitUntil: 'networkidle2' });
+    const textbox = 'textarea[class="model-input-text-input"]';
+    await page.waitForSelector(textbox);
+    await page.type(textbox, req.params.prompt);
+    await page.click('button[id="modelSubmitButton"]');
+    await page.waitForTimeout(10000);
+    const img = await page.$eval('div[class="try-it-result-area"]', el => el.querySelector('img').src);
+    //download image in temp
+    const viewSource = await page.goto(img);
+    const buffer = await viewSource.buffer();
+    res.set('Content-Type', 'image/png');
+    res.send(buffer);
+    browser.close();
+    }catch(err){
+        res.json({error:err})
+    }
 });
-
-app.listen(PORT, () => {
-  console.log(`Listening on port ${PORT}`);
+app.listen(4069, () => {
+    console.log('Server started on port 3000');
 });
