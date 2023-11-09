@@ -49,9 +49,10 @@ app.get('/preview/:prompt', async (req, res) => {
     res.send(buffer);
     browser.close();
     }catch(err){
+        console.log(err)
         res.json({error:err})
     }
 });
-app.listen(4069, () => {
-    console.log('Server started on port 3000');
+app.listen(1000, () => {
+    console.log('Server started on port 1000');
 });
