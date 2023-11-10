@@ -4,7 +4,17 @@ const app = express();
 
 app.get('/', async (req, res) => {
         if (!req.headers.prompt) return res.status(400).json({ error: 'Prompt not found' });
-    const browser = await puppeter.launch({ headless: false });
+    const browser = await puppeter.launch({ headless:true,
+    args: [
+      "--disable-setuid-sandbox",
+      "--no-sandbox",
+      "--single-process",
+      "--no-zygote",
+    ],
+    executablePath:
+      process.env.NODE_ENV === "production"
+        ? process.env.PUPPETEER_EXECUTABLE_PATH
+        : puppeteer.executablePath(),});
     const page = await browser.newPage();
     await page.goto('https://deepai.org/machine-learning-model/text2img', { waitUntil: 'networkidle2' ,timeout:60000000});
     const textbox = 'textarea[class="model-input-text-input"]';
