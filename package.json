@@ -5,7 +5,7 @@
     "puppeteer-extra": "^3.3.6",
     "puppeteer-extra-plugin-stealth": "^2.11.2"
   },
-  "name": "image",
+  "name": "@nishantapps/image-generator",
   "version": "1.0.0",
   "main": "index.js",
   "devDependencies": {},
