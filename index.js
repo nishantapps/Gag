@@ -17,7 +17,7 @@ const config = {
     "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-o0xv5%40plam-97af6.iam.gserviceaccount.com",
     "universe_domain": "googleapis.com"
   }
-  async function scrape(text){
+  async function scrape(text,number){
     const browser = await puppeteer.launch({ 
         headless:true,
         args: [
@@ -42,7 +42,11 @@ const config = {
     await page.click('.gr-button')
     //get all images from a div named "images"
     await page.waitForSelector('div.grid-cols-3 button img',{timeout: 600000});
-    const images = await page.$$eval('div.grid-cols-3 button img', imgs => imgs.map(img => img.src),{timeout: 600000});
+    const images = await page.$$eval('div.grid-cols-3 button img', imgs => {
+      for(let i = 0; i <number;i++){
+        imgs.map(img => img.src)
+      }
+    },{timeout: 600000});
     await browser.close();
     return images;   
 }
@@ -92,8 +96,37 @@ app.get('/', async (req, res) => {
                     }
                     if(!yes){
                         console.log("We did not find your roomid")
-                        let data = {response:'Roomid is not valid', code: 401}
-                        return res.json(data)
+                        const newroom = req.headers.roomid;
+                        const documentRef = collectionRef.doc(userid);
+                        documentRef.get().then((docSnapshot) => {
+                            if(docSnapshot.exists){
+                                const data = docSnapshot.data();
+                                if(data.premium == true){
+                                   for(let i=0;i<data.room.length;i++){
+                                       if(data.room[i].roomid == newroom){
+                                       }
+                                   }
+                                   let array = [data.room] || [];
+                                   const newd = {
+                                       roomid:newroom,
+                                       chats:[]
+                                   }
+                                   console.log(array)
+                                   array.push(newd)
+                                   collectionRef.doc(userid).update({
+                                       room: array,
+                                   }).then(() => {
+                                       console.log('Created')
+                                   }
+                                   ).catch((error) => {
+                                       console.error('Error updating document: ', error);
+                                   });
+                            }else{
+                                let data = {response:'Looks like you are not a premium user. Please considure upgrading.', code:200}
+                                       res.json(data)
+                            }
+                            }
+                        });
                     }
                 }else{
                     arrayData = data.chats
@@ -140,7 +173,7 @@ app.get('/', async (req, res) => {
 
 
             } else {
-                let data = { response: 'You are not regstered', code: 503 }
+                let data = { response: 'You are not registered', code: 503 }
                 res.json(data)
                 console.log('Document does not exist');
             }
@@ -155,75 +188,63 @@ app.get('/', async (req, res) => {
 });
 
 app.get('/register', async (req, res) => {
-    const newData = {
-        chats: [],
-        premium: false,
-        room:[
-            {
-                roomid:12345,
-                chats:[]
-            },
-            {
-                roomid:123456,
-                chats:[]
-            }
-        ]
-    };
-    collectionRef.add(newData)
-        .then((docRef) => {
-            let data = { response: 'User registered', code: 200 , newid: docRef.id}
-            res.json(data)
-        })
-        .catch((error) => {
-            console.error('Error adding document: ', error);
-        });
+    //get all data length
+    const headers = req.headers;
+    const snapshot = await collectionRef.count().get();
+    let newData ={}
+if(snapshot.data().count<=120){
+  newData = {
+    chats: [],
+    premium:true,
+    room:[
+        {
+            roomid:12345,
+            chats:[]
+        },
+        {
+            roomid:123456,
+            chats:[]
+        }
+    ]
+};
+}else{
+  const currentDate = new Date();
+
+// Set the date to the first day of the next month
+currentDate.setMonth(currentDate.getMonth() + 1, 1);
+  newData = {
+    chats: [],
+    premium:false,
+    images:900,
+    resetDate:currentDate.toDateString(),
+    room:[
+        {
+            roomid:12345,
+            chats:[]
+        },
+        {
+            roomid:123456,
+            chats:[]
+        }
+    ]
+};
+}
+
+  collectionRef.add(newData)
+      .then((docRef) => {
+          let data = { response: 'User registered', code: 200 , newid: docRef.id}
+          res.json(data)
+      })
+      .catch((error) => {
+          console.error('Error adding document: ', error);
+      });
+
 })
 app.get('/ping', async (req, res) => {
     //get actual ping
     let data = { response: 'pong', code: 200 }
     res.json(data)
 })
-app.get('/new/room', async (req, res) => {
-    const newroom = req.headers['roomid'];
-    const userid = req.headers['userid'];
-    if (!newroom) return res.status(400).send('Roomid is required.');
-    if (!userid) return res.status(400).send('Userid is required.');
-    const documentRef = collectionRef.doc(userid);
-documentRef.get().then((docSnapshot) => {
-    if(docSnapshot.exists){
-        const data = docSnapshot.data();
-        if(data.premium == true){
-           for(let i=0;i<data.room.length;i++){
-               if(data.room[i].roomid == newroom){
-                let data = {response:'Roomid already exists', code:402}
-                   return res.json(data)
-               }
-           }
-           console.log(data.room)
-           let array = [data.room] || [];
-           const newd = {
-               roomid:newroom,
-               chats:[]
-           }
-           console.log(array)
-           array.push(newd)
-           collectionRef.doc(userid).update({
-               room: array,
-           }).then(() => {
-            let data = {response:'Room created', code:200}
-               res.json(data)
-               console.log('Created')
-           }
-           ).catch((error) => {
-               console.error('Error updating document: ', error);
-           });
-    }else{
-        let data = {response:'Looks like you are not a premium user. Please considure upgrading.', code:200}
-               res.json(data)
-    }
-    }
-});
-});
 app.get('/images', async (req, res) => {
     const text = req.headers.prompt;
     if(!text) return res.status(400).send('Text is required.');
@@ -234,16 +255,72 @@ app.get('/images', async (req, res) => {
         if(docSnapshot.exists){
             const data = docSnapshot.data();
             if(data.premium == true){
-                const images = await scrape(text);
+                const images = await scrape(text, req.headers['number'] | 9);
                 let data = {response:images, code:200}
                 res.json(data)
             }else{
-                let data = {response:'Looks like you are not a premium user. Please considure upgrading.', code:200}
-                res.json(data)
+              if(data.resetDate == new Date().getMonth().toDateString()){
+                documentRef.get().then((docSnapshot) => {
+                  if(docSnapshot.exists){
+                      const data = docSnapshot.data();
+                          collectionRef.doc(req.headers['userid']).update({
+                              images: 600,
+                              resetDate: new Date().getMonth().toDateString()
+                          }).then(() => {
+                              console.log('Document successfully updated!');
+                          }
+                          ).catch((error) => {
+                              console.error('Error updating document: ', error);
+                          });
+                  }
+              });
+              }
+
+              if(data.images>0){
+                const images = await scrape(text);
+              let data = {response:images, code:200}
+              //update user
+              const documentRef = collectionRef.doc(req.headers['userid']);
+              documentRef.get().then((docSnapshot) => {
+                  if(docSnapshot.exists){
+                      const data = docSnapshot.data();
+                          collectionRef.doc(req.headers['userid']).update({
+                              images: data.images - headers['number'] | 9,
+                          }).then(() => {
+                            res.json(data);
+                              console.log('Document successfully updated!');
+                          }
+                          ).catch((error) => {
+                            res.json({response:'Error updating document: '+error, code:400});
+                              console.error('Error updating document: ', error);
+                          });
+                  }
+              });
+              }else{
+                res.json({response:'You have reached your limit. Please upgrade to premium to get unlimited images.', code:200});
+              
+              }
             }
         }
     });
 });
+app.get('/update', async (req,res) =>{
+  const userid = req.headers.userid;
+  //get every next moth date
+// Get the current date
+const currentDate = new Date();
+
+// Set the date to the first day of the next month
+currentDate.setMonth(currentDate.getMonth() + 1, 1);
+
+// Display the result
+
+
+  const newData = {
+    images:900,
+    resetDate:currentDate.toDateString()
+  }
+})
 app.listen(port, () => {
     console.log(`Server is running on port ${port} . you can now send requests.`);
 });
