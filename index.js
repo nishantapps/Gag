@@ -259,7 +259,7 @@ app.get('/images', async (req, res) => {
                 let data = {response:images, code:200}
                 res.json(data)
             }else{
-              if(data.resetDate == new Date().getMonth().toDateString()){
+              if(data.resetDate == new Date().getMonth().toString()){
                 documentRef.get().then((docSnapshot) => {
                   if(docSnapshot.exists){
                       const data = docSnapshot.data();
