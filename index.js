@@ -17,7 +17,7 @@ const config = {
     "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-o0xv5%40plam-97af6.iam.gserviceaccount.com",
     "universe_domain": "googleapis.com"
   }
-  async function scrape(text,number){
+  async function scrape(text,n){
     const browser = await puppeteer.launch({ 
         headless:true,
         args: [
@@ -43,7 +43,7 @@ const config = {
     //get all images from a div named "images"
     await page.waitForSelector('div.grid-cols-3 button img',{timeout: 600000});
     const images = await page.$$eval('div.grid-cols-3 button img', imgs => {
-      for(let i = 0; i <number;i++){
+      for(let i = 0; i <n || 9;i++){
         imgs.map(img => img.src)
       }
     },{timeout: 600000});
