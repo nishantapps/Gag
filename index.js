@@ -42,10 +42,7 @@ const config = {
     await page.click('.gr-button')
     //get all images from a div named "images"
     await page.waitForSelector('div.grid-cols-3 button img',{timeout: 600000});
-    const images = await page.$$eval('div.grid-cols-3 button img', imgs => {
-     
-        imgs.map(img => img.src)
-    },{timeout: 600000});
+   const images = await page.$$eval('div.grid-cols-3 button img', imgs => imgs.map(img => img.src), { timeout: 600000 });
     await browser.close();
     return images;   
 }
