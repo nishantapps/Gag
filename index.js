@@ -403,9 +403,9 @@ app.get("/v1/gemini/:model", async (req,res) =>{
     if(!model) return res.json({response:'Not a valid model'})
     const headers = req.headers;
     if(model == "gemini-pro"){
-if(!headers['api-key']) return res.json({response:'Please enter a api key'})
+if(!headers['api_key']) return res.json({response:'Please enter a api key'})
 if(!headers['text']) return res.json({response:'Pleae enter your question'})
-        const genAI = new GoogleGenerativeAI(headers['api-key']);
+        const genAI = new GoogleGenerativeAI(headers['api_key']);
   const model = genAI.getGenerativeModel({ model: 'gemini-pro'});
   const generationConfig = {
     temperature: headers['temperature'] || 1,
