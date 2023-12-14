@@ -3,7 +3,84 @@ import * as dotenv from 'dotenv';
 import PaLM from 'palm-api';
 import admin from 'firebase-admin';
 import puppeteer from 'puppeteer';
+import fs from 'fs'
+import path from 'path'
+import axios from 'axios'
 dotenv.config();
+import { GoogleGenerativeAI, HarmCategory,
+    HarmBlockThreshold, } from "@google/generative-ai";
+async function isImageUrl(url) {
+    try {
+      // Make a HEAD request to get the headers
+      const response = await axios.head(url);
+  
+      // Check if the content type is an image
+      return response.headers['content-type'].startsWith('image');
+    } catch (error) {
+      // Handle any errors, e.g., invalid URL
+      console.error('Error:', error.message);
+      return false;
+    }
+  }
+  
+  async function downloadAndDeleteImage(url, downloadPath) {
+    if (await isImageUrl(url)) {
+      try {
+        // Make a GET request to get the image content
+        const response = await axios.get(url, { responseType: 'arraybuffer' });
+  
+        // Extract the file extension from the content type
+        const fileExtension = response.headers['content-type'].split('/')[1];
+  
+        // Build the file path
+        const filePath = path.join(downloadPath, `image.${fileExtension}`);
+  
+        // Save the image
+        fs.writeFileSync(filePath, response.data);
+        return async function isImageUrl(url) {
+  try {
+    // Make a HEAD request to get the headers
+    const response = await axios.head(url);
+
+    // Check if the content type is an image
+    return response.headers['content-type'].startsWith('image');
+  } catch (error) {
+    // Handle any errors, e.g., invalid URL
+    console.error('Error:', error.message);
+    return false;
+  }
+}
+
+async function downloadAndDeleteImage(url, downloadPath) {
+  if (await isImageUrl(url)) {
+    try {
+      // Make a GET request to get the image content
+      const response = await axios.get(url, { responseType: 'arraybuffer' });
+
+      // Extract the file extension from the content type
+      const fileExtension = response.headers['content-type'].split('/')[1];
+
+      // Build the file path
+      const filePath = path.join(downloadPath, `image.${fileExtension}`);
+
+      // Save the image
+      fs.writeFileSync(filePath, response.data);
+      console.log(`Image downloaded to ${filePath}`);
+      return filePath;
+    } catch (error) {
+      console.error('Error:', error.message);
+    }
+  } else {
+    console.log('The URL does not point to an image.');
+  }
+}
+      } catch (error) {
+        console.error('Error:', error.message);
+      }
+    } else {
+      console.log('The URL does not point to an image.');
+    }
+  }
 const config = {
     "type": "service_account",
     "project_id": "plam-97af6",
@@ -42,7 +119,11 @@ const config = {
     await page.click('.gr-button')
     //get all images from a div named "images"
     await page.waitForSelector('div.grid-cols-3 button img',{timeout: 600000});
-   const images = await page.$$eval('div.grid-cols-3 button img', imgs => imgs.map(img => img.src), { timeout: 600000 });
+    const images = await page.$$eval('div.grid-cols-3 button img', imgs => {
+      for(let i = 0; i <n || 9;i++){
+        imgs.map(img => img.src)
+      }
+    },{timeout: 600000});
     await browser.close();
     return images;   
 }
@@ -316,6 +397,111 @@ currentDate.setMonth(currentDate.getMonth() + 1, 1);
     images:900,
     resetDate:currentDate.toDateString()
   }
+});
+app.get("/v1/gemini/:model", async (req,res) =>{
+    const model =  req.params.model;
+    if(!model) return res.json({response:'Not a valid model'})
+    const headers = req.headers;
+    if(model == "gemini-pro"){
+if(!headers['api-key']) return res.json({response:'Please enter a api key'})
+if(!headers['text']) return res.json({response:'Pleae enter your question'})
+        const genAI = new GoogleGenerativeAI(headers['api-key']);
+  const model = genAI.getGenerativeModel({ model: 'gemini-pro'});
+  const generationConfig = {
+    temperature: headers['temperature'] || 1,
+    topK: headers['top-k'] || 1,
+    topP: headers['top-p'] || 1,
+    maxOutputTokens: headers['maxOutputTokens']|| 2048,
+  };
+
+  const safetySettings = [
+    {
+      category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+      threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+    },
+    {
+      category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+      threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+    },
+    {
+      category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+      threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+    },
+    {
+      category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+      threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+    },
+  ];
+  const parts = [
+    {text: headers['text']},
+  ];
+
+  const result = await model.generateContent({
+    contents: [{ role: "user", parts }],
+    generationConfig,
+    safetySettings,
+  });
+
+  const response = result.response;
+  res.json({response:response.text(), code:200});
+    }
+    if(model == "gemini-pro-vision"){
+       return res.json({response:"We are currently working on it"});
+        const headers = req.headers;
+        if(!headers['api-key']) return res.json({response:'Please enter a api key'})
+if(!headers['text']) return res.json({response:'Pleae enter your question'})
+if(!headers['image-url']) return res.json({response:"Please nter a image url"})
+        const genAI = new GoogleGenerativeAI(headers['api-key']);
+  const model = genAI.getGenerativeModel({ model: 'gemini-pro'});
+
+  const generationConfig = {
+    temperature: headers['temperature'] || 1,
+    topK: headers['top-k'] || 1,
+    topP: headers['top-p'] || 1,
+  };
+
+        const safetySettings = [
+          {
+            category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+            threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+          },
+          {
+            category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+            threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+          },
+          {
+            category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+            threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+          },
+          {
+            category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+            threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+          },
+        ];
+      
+        if (!fs.existsSync(downloadAndDeleteImage(req.headers['image-url'], './tmp'))) {
+          throw new Error("Could not find images in current directory.");
+        }
+      
+        const parts = [
+          {text: "Describe what the people are doing in this image:\n"},
+          {
+            inlineData: {
+              mimeType: "image/jpeg",
+              data: Buffer.from(fs.readFileSync(downloadAndDeleteImage(req.headers['image-url'], './tmp'))).toString("base64")
+            }
+          },
+        ];
+      
+        const result = await model.generateContent({
+          contents: [{ role: "user", parts }],
+          generationConfig,
+          safetySettings,
+        });
+      
+        const response = result.response;
+        res.json({response:response.text(), code:200})
+    }
 })
 app.listen(port, () => {
     console.log(`Server is running on port ${port} . you can now send requests.`);
