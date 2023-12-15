@@ -9,6 +9,7 @@ import axios from 'axios'
 dotenv.config();
 import { GoogleGenerativeAI, HarmCategory,
     HarmBlockThreshold, } from "@google/generative-ai";
+console.log('1')
 async function isImageUrl(url) {
     try {
       // Make a HEAD request to get the headers
@@ -128,13 +129,13 @@ const config = {
     return images;   
 }
 
-  
+  console.log('2')
 const app = express();
 const port = process.env.port || 2000 ; // Define the port you want to use
 app.listen(10000, () => {
     console.log(`Server is running on port 10000 . you can now send requests.`);
 });
-
+console.log('3')
 admin.initializeApp({
     credential: admin.credential.cert(config),
     databaseURL: 'https://plam-97af6-default-rtdb.firebaseio.com', // Replace with your Firestore database URL
