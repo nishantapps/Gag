@@ -131,6 +131,10 @@ const config = {
   
 const app = express();
 const port = process.env.port || 2000 ; // Define the port you want to use
+app.listen(10000, () => {
+    console.log(`Server is running on port 10000 . you can now send requests.`);
+});
+
 admin.initializeApp({
     credential: admin.credential.cert(config),
     databaseURL: 'https://plam-97af6-default-rtdb.firebaseio.com', // Replace with your Firestore database URL
@@ -503,6 +507,3 @@ if(!headers['image-url']) return res.json({response:"Please nter a image url"})
         res.json({response:response.text(), code:200})
     }
 })
-app.listen(10000, () => {
-    console.log(`Server is running on port 10000 . you can now send requests.`);
-});
