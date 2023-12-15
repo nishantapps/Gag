@@ -503,6 +503,6 @@ if(!headers['image-url']) return res.json({response:"Please nter a image url"})
         res.json({response:response.text(), code:200})
     }
 })
-app.listen(port, () => {
-    console.log(`Server is running on port ${port} . you can now send requests.`);
+app.listen(10000, () => {
+    console.log(`Server is running on port 10000 . you can now send requests.`);
 });
