@@ -131,10 +131,8 @@ const config = {
 
   console.log('2')
 const app = express();
-const port = process.env.port || 2000 ; // Define the port you want to use
-app.listen(10000, () => {
-    console.log(`Server is running on port 10000 . you can now send requests.`);
-});
+const port = process.env.PORT || 2000 ; // Define the port you want to use
+
 console.log('3')
 admin.initializeApp({
     credential: admin.credential.cert(config),
@@ -508,3 +506,6 @@ if(!headers['image-url']) return res.json({response:"Please nter a image url"})
         res.json({response:response.text(), code:200})
     }
 })
+app.listen(port, () => {
+    console.log(`Server is running on port ${port} . you can now send requests.`);
+});
