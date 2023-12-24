@@ -9,79 +9,6 @@ import axios from 'axios'
 dotenv.config();
 import { GoogleGenerativeAI, HarmCategory,
     HarmBlockThreshold, } from "@google/generative-ai";
-console.log('1')
-async function isImageUrl(url) {
-    try {
-      // Make a HEAD request to get the headers
-      const response = await axios.head(url);
-  
-      // Check if the content type is an image
-      return response.headers['content-type'].startsWith('image');
-    } catch (error) {
-      // Handle any errors, e.g., invalid URL
-      console.error('Error:', error.message);
-      return false;
-    }
-  }
-  
-  async function downloadAndDeleteImage(url, downloadPath) {
-    if (await isImageUrl(url)) {
-      try {
-        // Make a GET request to get the image content
-        const response = await axios.get(url, { responseType: 'arraybuffer' });
-  
-        // Extract the file extension from the content type
-        const fileExtension = response.headers['content-type'].split('/')[1];
-  
-        // Build the file path
-        const filePath = path.join(downloadPath, `image.${fileExtension}`);
-  
-        // Save the image
-        fs.writeFileSync(filePath, response.data);
-        return async function isImageUrl(url) {
-  try {
-    // Make a HEAD request to get the headers
-    const response = await axios.head(url);
-
-    // Check if the content type is an image
-    return response.headers['content-type'].startsWith('image');
-  } catch (error) {
-    // Handle any errors, e.g., invalid URL
-    console.error('Error:', error.message);
-    return false;
-  }
-}
-
-async function downloadAndDeleteImage(url, downloadPath) {
-  if (await isImageUrl(url)) {
-    try {
-      // Make a GET request to get the image content
-      const response = await axios.get(url, { responseType: 'arraybuffer' });
-
-      // Extract the file extension from the content type
-      const fileExtension = response.headers['content-type'].split('/')[1];
-
-      // Build the file path
-      const filePath = path.join(downloadPath, `image.${fileExtension}`);
-
-      // Save the image
-      fs.writeFileSync(filePath, response.data);
-      console.log(`Image downloaded to ${filePath}`);
-      return filePath;
-    } catch (error) {
-      console.error('Error:', error.message);
-    }
-  } else {
-    console.log('The URL does not point to an image.');
-  }
-}
-      } catch (error) {
-        console.error('Error:', error.message);
-      }
-    } else {
-      console.log('The URL does not point to an image.');
-    }
-  }
 const config = {
     "type": "service_account",
     "project_id": "plam-97af6",
@@ -402,10 +329,13 @@ currentDate.setMonth(currentDate.getMonth() + 1, 1);
   }
 });
 app.get("/v1/gemini/:model", async (req,res) =>{
+
     const model =  req.params.model;
-    if(!model) return res.json({response:'Not a valid model'})
+    if(!model) return res.json({response:'model required'})
+    if(model != "gemini-pro" && model != "gemini-pro-vision") return res.json({response:'Not a valid model'});
     const headers = req.headers;
     if(model == "gemini-pro"){
+try{
 if(!headers['api_key']) return res.json({response:'Please enter a api key'})
 if(!headers['text']) return res.json({response:'Pleae enter your question'})
         const genAI = new GoogleGenerativeAI(headers['api_key']);
@@ -447,8 +377,12 @@ if(!headers['text']) return res.json({response:'Pleae enter your question'})
 
   const response = result.response;
   res.json({response:response.text(), code:200});
+  }catch(e){
+    return res.json({response:'Error: '+e, code:400});
+  }
     }
     if(model == "gemini-pro-vision"){
+      try{
         const headers = req.headers;
         if(!headers['api_key']) return res.json({response:'Please enter a api key'})
         if(!headers['userid']) return res.json({response:'Please enter a userid'})
@@ -460,7 +394,7 @@ if(!headers['image']) return res.json({response:"Please enter a image url"})
 
 
   const documentRef = collectionRef.doc(headers['userid']);
-  console.log(documentRef)
+  if(!documentRef) return res.json({response:'User not found', code:400}).status(400);
 
   documentRef.get().then(async (docSnapshot) => {
     if(docSnapshot.exists){
@@ -470,6 +404,7 @@ if(!headers['image']) return res.json({response:"Please enter a image url"})
             temperature: headers['temperature'] || 1,
             topK: headers['top_k'] || 1,
             topP: headers['top-p'] || 1,
+            maxOutputTokens: headers['maxOutputTokens']|| 2048,
           };
         
                 const safetySettings = [
@@ -513,7 +448,11 @@ if(!headers['image']) return res.json({response:"Please enter a image url"})
         }
     }
 });
+    }catch(e){
+      return res.json({response:'Error: '+e, code:400});
     }
+
+  }
 })
 app.listen(port, () => {
     console.log(`Server is running on port ${port} . you can now send requests.`);
