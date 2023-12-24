@@ -412,8 +412,8 @@ if(!headers['text']) return res.json({response:'Pleae enter your question'})
   const model = genAI.getGenerativeModel({ model: 'gemini-pro'});
   const generationConfig = {
     temperature: headers['temperature'] || 1,
-    topK: headers['top-k'] || 1,
-    topP: headers['top-p'] || 1,
+    topK: headers['top_k'] || 1,
+    topP: headers['top_p'] || 1,
     maxOutputTokens: headers['maxOutputTokens']|| 2048,
   };
 
