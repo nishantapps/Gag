@@ -449,61 +449,70 @@ if(!headers['text']) return res.json({response:'Pleae enter your question'})
   res.json({response:response.text(), code:200});
     }
     if(model == "gemini-pro-vision"){
-       return res.json({response:"We are currently working on it"});
         const headers = req.headers;
-        if(!headers['api-key']) return res.json({response:'Please enter a api key'})
+        if(!headers['api_key']) return res.json({response:'Please enter a api key'})
+        if(!headers['userid']) return res.json({response:'Please enter a userid'})
 if(!headers['text']) return res.json({response:'Pleae enter your question'})
-if(!headers['image-url']) return res.json({response:"Please nter a image url"})
-        const genAI = new GoogleGenerativeAI(headers['api-key']);
-  const model = genAI.getGenerativeModel({ model: 'gemini-pro'});
+if(!headers['image']) return res.json({response:"Please enter a image url"})
+        const genAI = new GoogleGenerativeAI(headers['api_key']);
+  const model = genAI.getGenerativeModel({ model: 'gemini-pro-vision'});
 
-  const generationConfig = {
-    temperature: headers['temperature'] || 1,
-    topK: headers['top-k'] || 1,
-    topP: headers['top-p'] || 1,
-  };
 
-        const safetySettings = [
-          {
-            category: HarmCategory.HARM_CATEGORY_HARASSMENT,
-            threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-          },
-          {
-            category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-            threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-          },
-          {
-            category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-            threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-          },
-          {
-            category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-            threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-          },
-        ];
-      
-        if (!fs.existsSync(downloadAndDeleteImage(req.headers['image-url'], './tmp'))) {
-          throw new Error("Could not find images in current directory.");
+
+  const documentRef = collectionRef.doc(headers['userid']);
+  console.log(documentRef)
+
+  documentRef.get().then(async (docSnapshot) => {
+    if(docSnapshot.exists){
+        const data = docSnapshot.data();
+        if(data.experimental == true){
+          const generationConfig = {
+            temperature: headers['temperature'] || 1,
+            topK: headers['top_k'] || 1,
+            topP: headers['top-p'] || 1,
+          };
+        
+                const safetySettings = [
+                  {
+                    category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+                    threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+                  },
+                  {
+                    category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+                    threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+                  },
+                  {
+                    category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+                    threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+                  },
+                  {
+                    category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+                    threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+                  },
+                ];
+                const response = await axios.get(headers['image'], { responseType: 'arraybuffer' });
+                const base64Data = Buffer.from(response.data, 'binary').toString('base64');
+                const parts = [
+                  {text: headers['text']+"\n"},
+                  {
+                    inlineData: {
+                      mimeType: "image/jpeg",
+                      data: base64Data
+                    }
+                  },
+                ];
+                const result = await model.generateContent({
+                  contents: [{ role: "user", parts }],
+                  generationConfig,
+                  safetySettings,
+                });
+                const responses = result.response;
+                res.json({response:responses.text(), code:200});
+        }else{
+          return res.status(400).send('You are not a experimental user.');
         }
-      
-        const parts = [
-          {text: "Describe what the people are doing in this image:\n"},
-          {
-            inlineData: {
-              mimeType: "image/jpeg",
-              data: Buffer.from(fs.readFileSync(downloadAndDeleteImage(req.headers['image-url'], './tmp'))).toString("base64")
-            }
-          },
-        ];
-      
-        const result = await model.generateContent({
-          contents: [{ role: "user", parts }],
-          generationConfig,
-          safetySettings,
-        });
-      
-        const response = result.response;
-        res.json({response:response.text(), code:200})
+    }
+});
     }
 })
 app.listen(port, () => {
