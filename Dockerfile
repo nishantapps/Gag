@@ -8,6 +8,5 @@ WORKDIR /usr/src/app
 COPY package*.json ./
 RUN npm ci
 RUN npm cache clear --force
-RUN npm install
 COPY . .
 CMD ["node ","index.js"]
